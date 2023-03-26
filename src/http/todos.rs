@@ -1,8 +1,8 @@
-use axum::{extract::{Query, State}, Json, Router, routing::get};
+use axum::{extract::{Query, State, Path}, Json, Router, routing::get};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::error::AppError;
+use crate::error::{AppError, TodoRepoError};
 
 use super::Db;
 
@@ -44,6 +44,17 @@ async fn todos_index(
     Ok(Json(todos))
 }
 
+async fn todo_show(
+    Path(todo_id): Path<Uuid>,
+    State(db): State<Db>
+) -> Result<Json<Todo>, AppError> {
+    let todos = db.read().unwrap();
+    match todos.get(&todo_id) {
+        Some(todo) => Ok(Json(todo.to_owned())),
+        None => Err(AppError::TodoRepo(TodoRepoError::NotFound)),
+    }
+}
+
 async fn todos_create(State(db): State<Db>, Json(input): Json<CreateTodo>) -> Result<Json<Todo>, AppError> {
     let todo = Todo {
         id: Uuid::new_v4(),
@@ -58,5 +69,6 @@ async fn todos_create(State(db): State<Db>, Json(input): Json<CreateTodo>) -> Re
 
 pub fn router(db: Db) -> Router {
     Router::new()
-        .route("/todos", get(todos_index).post(todos_create)).with_state(db)
+        .route("/todos", get(todos_index).post(todos_create))
+        .route("/todo/:id", get(todo_show)).with_state(db)
 }
