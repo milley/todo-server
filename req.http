@@ -1,0 +1,7 @@
+PUT http://localhost:3000/todo/c2cbac5c-75b2-4421-8759-a22b5c4b50b6
+Content-Type: application/json
+
+{
+    "text": "title2",
+    "completed": true
+}
