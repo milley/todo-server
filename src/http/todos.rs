@@ -1,6 +1,8 @@
-use axum::{extract::{Query, State}, response::IntoResponse, Json, http::StatusCode, Router, routing::get};
+use axum::{extract::{Query, State}, Json, Router, routing::get};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+use crate::error::AppError;
 
 use super::Db;
 
@@ -27,7 +29,7 @@ pub struct Pagination {
 async fn todos_index(
     pagination: Option<Query<Pagination>>,
     State(db): State<Db>
-) -> impl IntoResponse {
+) -> Result<Json<Vec<Todo>>, AppError> {
     let todos = db.read().unwrap();
 
     let Query(pagination) = pagination.unwrap_or_default();
@@ -39,10 +41,10 @@ async fn todos_index(
         .cloned()
         .collect::<Vec<_>>();
 
-    Json(todos)
+    Ok(Json(todos))
 }
 
-async fn todos_create(State(db): State<Db>, Json(input): Json<CreateTodo>) -> impl IntoResponse {
+async fn todos_create(State(db): State<Db>, Json(input): Json<CreateTodo>) -> Result<Json<Todo>, AppError> {
     let todo = Todo {
         id: Uuid::new_v4(),
         text: input.text,
@@ -51,7 +53,7 @@ async fn todos_create(State(db): State<Db>, Json(input): Json<CreateTodo>) -> im
 
     db.write().unwrap().insert(todo.id, todo.clone());
 
-    (StatusCode::CREATED, Json(todo))
+    Ok(todo.into())
 }
 
 pub fn router(db: Db) -> Router {
