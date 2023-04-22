@@ -5,3 +5,8 @@ Content-Type: application/json
     "text": "title2",
     "completed": true
 }
+
+###
+
+GET http://localhost:3000/todos
+Content-Type: application/json
